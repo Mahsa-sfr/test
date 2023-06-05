@@ -1,0 +1,300 @@
+# Azure Devops - Python Pipeline
+# last update: Cédric FARINAZZO <cedric.farinazzo@alten.com> - 05/04/2022
+
+trigger:
+- '*'
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: lint
+    displayName: lint
+    jobs:
+      - job: Isort
+        variables:
+          PIP_CACHE_DIR: "$(Pipeline.Workspace)/.cache/pip"
+          VENV_DIR: "$(Pipeline.Workspace)/venv"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+          - script: |
+              echo "##vso[task.setvariable variable=PY]$(python -VV)"
+            displayName: set version variables
+          - task: Cache@2
+            inputs:
+              key: Lint | Isort | pip | "$(PY)"
+              path: $(PIP_CACHE_DIR)
+              cacheHitVar: PIP_CACHE_RESTORED
+          - task: Cache@2
+            inputs:
+              key: Lint | Isort | venv | "$(PY)"
+              path: $(VENV_DIR)
+              cacheHitVar: VENV_CACHE_RESTORED
+          - script: |
+              python -m venv ${VENV_DIR}
+              source ${VENV_DIR}/bin/activate
+              pip install --upgrade pip isort
+            condition: or(eq(variables.PIP_CACHE_RESTORED, 'false'), eq(variables.VENV_CACHE_RESTORED, 'false'))
+            displayName: 'Install dependencies'
+          - script: |
+              source ${VENV_DIR}/bin/activate
+              isort --check-only $(find . -name "*.py")
+            displayName: 'isort'
+
+      - job: Flake8
+        variables:
+          PIP_CACHE_DIR: "$(Pipeline.Workspace)/.cache/pip"
+          VENV_DIR: "$(Pipeline.Workspace)/venv"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+          - script: |
+              echo "##vso[task.setvariable variable=PY]$(python -VV)"
+            displayName: set version variables
+          - task: Cache@2
+            inputs:
+              key: Lint | Flake8 | pip | "$(PY)"
+              path: $(PIP_CACHE_DIR)
+              cacheHitVar: PIP_CACHE_RESTORED
+          - task: Cache@2
+            inputs:
+              key: Lint | Flake8 | venv | "$(PY)"
+              path: $(VENV_DIR)
+              cacheHitVar: VENV_CACHE_RESTORED
+          - script: |
+              python -m venv ${VENV_DIR}
+              source ${VENV_DIR}/bin/activate
+              pip install --upgrade pip flake8
+            condition: or(eq(variables.PIP_CACHE_RESTORED, 'false'), eq(variables.VENV_CACHE_RESTORED, 'false'))
+            displayName: 'Install dependencies'
+          - script: |
+              source ${VENV_DIR}/bin/activate
+              flake8 .
+            displayName: 'flake8'
+
+      - job: Pylint
+        variables:
+          PIP_CACHE_DIR: "$(Pipeline.Workspace)/.cache/pip"
+          VENV_DIR: "$(Pipeline.Workspace)/venv"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+          - script: |
+              echo "##vso[task.setvariable variable=PY]$(python -VV)"
+            displayName: set version variables
+          - task: Cache@2
+            inputs:
+              key: Lint | Pylint | pip | "$(PY)"
+              path: $(PIP_CACHE_DIR)
+              cacheHitVar: PIP_CACHE_RESTORED
+          - task: Cache@2
+            inputs:
+              key: Lint | Pylint | venv | "$(PY)"
+              path: $(VENV_DIR)
+              cacheHitVar: VENV_CACHE_RESTORED
+          - script: |
+              python -m venv ${VENV_DIR}
+              source ${VENV_DIR}/bin/activate
+              pip install --upgrade pip pylint pylint_junit
+            condition: or(eq(variables.PIP_CACHE_RESTORED, 'false'), eq(variables.VENV_CACHE_RESTORED, 'false'))
+            displayName: 'Install dependencies'
+          - script: |
+              source ${VENV_DIR}/bin/activate
+              pylint $(git ls-files '*.py')
+            displayName: 'pylint'
+
+      - job: Safety
+        variables:
+          PIP_CACHE_DIR: "$(Pipeline.Workspace)/.cache/pip"
+          VENV_DIR: "$(Pipeline.Workspace)/venv"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+          - script: |
+              echo "##vso[task.setvariable variable=PY]$(python -VV)"
+            displayName: set version variables
+          - task: Cache@2
+            inputs:
+              key: Lint | Safety | pip | "$(PY)"
+              path: $(PIP_CACHE_DIR)
+              cacheHitVar: PIP_CACHE_RESTORED
+          - task: Cache@2
+            inputs:
+              key: Lint | Safety | venv | "$(PY)"
+              path: $(VENV_DIR)
+              cacheHitVar: VENV_CACHE_RESTORED
+          - script: |
+              python -m venv ${VENV_DIR}
+              source ${VENV_DIR}/bin/activate
+              pip install --upgrade pip safety
+            condition: or(eq(variables.PIP_CACHE_RESTORED, 'false'), eq(variables.VENV_CACHE_RESTORED, 'false'))
+            displayName: 'Install dependencies'
+          - script: |
+              source ${VENV_DIR}/bin/activate
+              safety check -r requirements.txt
+            displayName: 'safety'
+
+      - job: Bandit
+        variables:
+          PIP_CACHE_DIR: "$(Pipeline.Workspace)/.cache/pip"
+          VENV_DIR: "$(Pipeline.Workspace)/venv"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+          - script: |
+              echo "##vso[task.setvariable variable=PY]$(python -VV)"
+            displayName: set version variables
+          - task: Cache@2
+            inputs:
+              key: Lint | Bandit | pip | "$(PY)"
+              path: $(PIP_CACHE_DIR)
+              cacheHitVar: PIP_CACHE_RESTORED
+          - task: Cache@2
+            inputs:
+              key: Lint | Bandit | venv | "$(PY)"
+              path: $(VENV_DIR)
+              cacheHitVar: VENV_CACHE_RESTORED
+          - script: |
+              python -m venv ${VENV_DIR}
+              source ${VENV_DIR}/bin/activate
+              pip install --upgrade pip bandit
+            condition: or(eq(variables.PIP_CACHE_RESTORED, 'false'), eq(variables.VENV_CACHE_RESTORED, 'false'))
+            displayName: 'Install dependencies'
+          - script: |
+              source ${VENV_DIR}/bin/activate
+              bandit -x './env/*,./venv/*,./tests/*' -r -ll .
+            displayName: 'bandit'
+
+      - job: Secret_detection
+        variables:
+          GITLEAKS_DIR: "$(Pipeline.Workspace)/gitleaks"
+        continueOnError: true
+        steps:
+          - task: Cache@2
+            inputs:
+              key: Lint | Secret_detection | gitleaks
+              path: $(GITLEAKS_DIR)
+              cacheHitVar: GITLEAKS_RESTORED
+          - script: |
+              mkdir -p ${GITLEAKS_DIR}
+              wget -O /tmp/gitleaks.tar.gz https://github.com/zricethezav/gitleaks/releases/download/v8.3.0/gitleaks_8.3.0_linux_x64.tar.gz
+            condition: eq(variables.GITLEAKS_RESTORED, 'false')
+            displayName: 'Download dependencies'
+          - script: |
+              tar -C ${GITLEAKS_DIR} -xvf /tmp/gitleaks.tar.gz
+            condition: eq(variables.GITLEAKS_RESTORED, 'false')
+            displayName: 'Install dependencies'
+          - script: ${GITLEAKS_DIR}/gitleaks protect -v
+            displayName: 'Gitleaks'
+
+  - stage: test
+    displayName: test
+    jobs:
+      - job: pytest
+        variables:
+          PIP_CACHE_DIR: "$(Pipeline.Workspace)/.cache/pip"
+          VENV_DIR: "$(Pipeline.Workspace)/venv"
+        steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '$(python.version)'
+          displayName: 'Use Python $(python.version)'
+        - script: |
+            echo "##vso[task.setvariable variable=PY]$(python -VV)"
+          displayName: set version variables
+        - task: Cache@2
+          inputs:
+            key: Test | pytest | pip | "$(PY)"
+            path: $(PIP_CACHE_DIR)
+            cacheHitVar: PIP_CACHE_RESTORED
+        - task: Cache@2
+          inputs:
+            key: Test | pytest | venv | "$(PY)" | **/requirements.txt
+            restoreKeys: |
+                Test | pytest | venv | "$(PY)"
+            path: $(VENV_DIR)
+            cacheHitVar: VENV_CACHE_RESTORED
+        - script: |
+            python -m venv ${VENV_DIR}
+            source ${VENV_DIR}/bin/activate
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pytest pytest-cov pytest-custom_exit_code pytest-azurepipelines
+          condition: or(eq(variables.PIP_CACHE_RESTORED, 'false'), eq(variables.VENV_CACHE_RESTORED, 'false'))
+          displayName: 'Install dependencies'
+
+        - script: |
+            source ${VENV_DIR}/bin/activate
+            pytest --suppress-no-test-exit-code --doctest-modules --junitxml=junit/test-results.xml --cov-report xml --cov-report html --cov=.
+          displayName: 'pytest'
+
+        - task: PublishCodeCoverageResults@1
+          condition: succeededOrFailed()
+          inputs:
+            codeCoverageTool: Cobertura
+            summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+
+        strategy:
+          matrix:
+            Python39:
+              python.version: '3.9'
+            Python310:
+              python.version: '3.10'
+
+  - stage: build
+    displayName: build
+    jobs:
+      - job: Build_Docker_Image
+        steps:
+        - script: |
+            echo "##vso[task.setvariable variable=IMAGE_NAME]$(echo ${SYSTEM_TEAMPROJECT}/${BUILD_REPOSITORY_NAME} | tr '[:upper:]' '[:lower:]' | sed 's/ /_/g' | sed 's/²/2/g' | sed 's/(//g' | sed 's/)//g')"
+          displayName: set version variables
+
+        - task: Cache@2
+          displayName: Cache task
+          inputs:
+            key: 'docker | "$(Agent.OS)" | cache | "$(Build.SourceVersion)"'
+            restoreKeys: |
+                docker | "$(Agent.OS)" | cache
+                docker | "$(Agent.OS)"
+                docker
+            path: $(Pipeline.Workspace)/docker
+            cacheHitVar: CACHE_RESTORED                #Variable to set to 'true' when the cache is restored
+
+        - script: |
+            docker load -i $(Pipeline.Workspace)/docker/cache.tar
+          displayName: Docker restore
+          condition: and(not(canceled()), not(eq(variables.CACHE_RESTORED, 'false')))
+
+        - script: >
+            docker build -f "${BUILD_SOURCESDIRECTORY}/Dockerfile"
+            --label "com.azure.dev.image.system.teamfoundationcollectionuri=${SYSTEM_COLLECTIONURI}"
+            --label "com.azure.dev.image.system.teamproject=${SYSTEM_TEAMPROJECT}"
+            --label "com.azure.dev.image.build.repository.name=${BUILD_REPOSITORY_NAME}"
+            --label "com.azure.dev.image.build.sourceversion=${BUILD_SOURCEVERSION}"
+            --label "com.azure.dev.image.build.repository.uri=${BUILD_REPOSITORY_URI}"
+            --label "com.azure.dev.image.build.sourcebranchname=${BUILD_SOURCEBRANCHNAME}"
+            --label "com.azure.dev.image.build.definitionname=${BUILD_DEFINITIONNAME}"
+            --label "com.azure.dev.image.build.buildnumber=${BUILD_BUILDNUMBER}"
+            --label "com.azure.dev.image.build.builduri=${BUILD_BUILDURI}"
+            --build-arg GIT_HASH=${BUILD_SOURCEVERSION}
+            -t "${IMAGE_NAME}:${BUILD_SOURCEVERSION}"
+            "${BUILD_SOURCESDIRECTORY}"
+          displayName: Build docker image
+
+        - script: |
+            mkdir -p $(Pipeline.Workspace)/docker
+            docker save -o $(Pipeline.Workspace)/docker/cache.tar "${IMAGE_NAME}:${BUILD_SOURCEVERSION}" $(docker history -q "${IMAGE_NAME}:${BUILD_SOURCEVERSION}"  | grep -v "<missing>")
+          displayName: Docker save
+          condition: and(not(canceled()), not(failed()))

@@ -1,0 +1,22 @@
+# Dockerignore
+# last update: Cédric FARINAZZO <cedric.farinazzo@alten.com> - 23/03/2022
+
+.git/
+tests/
+venv/
+.pytest_cache/
+__pycache__/
+.gitignore
+.gitleaks.toml
+.isort.cfg
+.pre-commit-config.yaml
+.pylintrc
+.flake8
+azure-pipelines*.yaml
+README.md
+.vscode
+.idea
+.vs
+Dockerfile
+.dockerignore
+.env*

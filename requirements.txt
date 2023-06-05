@@ -1,0 +1,4 @@
+black
+flake8
+pytest
+python-dotenv==0.19.2

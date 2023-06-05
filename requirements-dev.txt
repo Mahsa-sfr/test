@@ -1,0 +1,10 @@
+# Dev Requirements
+# last update: Cédric FARINAZZO <cedric.farinazzo@alten.com> - 11/03/2022
+
+bandit
+black
+flake8
+isort
+pre-commit
+pylint
+safety
